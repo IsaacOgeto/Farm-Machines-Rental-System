@@ -1,0 +1,20 @@
+**Database Name: fmr_system**
+
+
+
+**Customer Login Details**
+
+Username: kim
+Password: 123456789
+
+Username: Rome
+Password: 123456789
+
+
+**Owner Login Details**
+
+Username: Izo
+Password: 123456789
+
+Username: Frank
+Password: 123456789

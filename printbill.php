@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<?php 
+session_start();
+require 'connection.php';
+$conn = Connect();
+?>
+<head>
+<link rel="shortcut icon" type="image/png" href="assets/img/P.png.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato">
+<link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" href="assets/fonts/font-awesome.min.css">
+<link rel="stylesheet" href="assets/w3css/w3.css">
+<link rel="stylesheet" type="text/css" href="assets/css/customerlogin.css">
+<script type="text/javascript" src="assets/js/jquery.min.js"></script>
+<script type="text/javascript" src="assets/js/bootstrap.min.js"></script>
+<link rel="stylesheet" type="text/css" media="screen" href="assets/css/clientpage.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="assets/css/bookingconfirm.css" />
+</head>
+<body ID="page-top" data-spy="scroll" data-target=".navbar-fixed-top">
+<!-- Navigation -->
+    <nav class="navbar navbar-custom navbar-fixed-top" role="navigation" style="color: black">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-main-collapse">
+                    <i class="fa fa-bars"></i>
+                    </button>
+                <a class="navbar-brand page-scroll" href="index.php">
+                   Farm Rentals </a>
+            </div>
+            <!-- Collect the nav links, forms, and other content for toggling -->
+
+            <?php
+                if(isset($_SESSION['login_client'])){
+            ?> 
+            <div class="collapse navbar-collapse navbar-right navbar-main-collapse">
+                <ul class="nav navbar-nav">
+                    <li>
+                        <a href="index.php">Home</a>
+                    </li>
+                    <li>
+                        <a href="#"><span class="glyphicon glyphicon-user"></span> Welcome <?php echo $_SESSION['login_client']; ?></a>
+                    </li>
+                    <li>
+                    <ul class="nav navbar-nav navbar-right">
+            <li><a href="#" class="dropdown-toggle active" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-user"></span> Control Panel <span class="caret"></span> </a>
+                <ul class="dropdown-menu">
+              <li> <a href="entercar.php">Add Machine</a></li>
+              <li> <a href="enterdriver.php"> Add Operator</a></li>
+              <li> <a href="clientview.php">View</a></li>
+
+            </ul>
+            </li>
+          </ul>
+                    </li>
+                    <li>
+                        <a href="logout.php"><span class="glyphicon glyphicon-log-out"></span> Logout</a>
+                    </li>
+                </ul>
+            </div>
+            
+            <?php
+                }
+                else if (isset($_SESSION['login_customer'])){
+            ?>
+            <div class="collapse navbar-collapse navbar-right navbar-main-collapse">
+                <ul class="nav navbar-nav">
+                    <li>
+                        <a href="index.php">Home</a>
+                    </li>
+                    <li>
+                        <a href="#"><span class="glyphicon glyphicon-user"></span> Welcome <?php echo $_SESSION['login_customer']; ?></a>
+                    </li>
+                    <ul class="nav navbar-nav">
+            <li><a href="#" class="dropdown-toggle active" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> Garagge <span class="caret"></span> </a>
+                <ul class="dropdown-menu">
+              <li> <a href="prereturncar.php">Return Now</a></li>
+              <li> <a href="mybookings.php"> My Bookings</a></li>
+            </ul>
+            </li>
+          </ul>
+                    <li>
+                        <a href="logout.php"><span class="glyphicon glyphicon-log-out"></span> Logout</a>
+                    </li>
+                </ul>
+            </div>
+
+            <?php
+            }
+                else {
+            ?>
+
+            <div class="collapse navbar-collapse navbar-right navbar-main-collapse">
+                <ul class="nav navbar-nav">
+                    <li>
+                        <a href="index.php">Home</a>
+                    </li>
+                    <li>
+                        <a href="clientlogin.php">Owner</a>
+                    </li>
+                    <li>
+                        <a href="customerlogin.php">Customer</a>
+                    </li>
+                    <li>
+                        <a href="#"> FAQ </a>
+                    </li>
+                </ul>
+            </div>
+                <?php   }
+                ?>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container -->
+    </nav>
+
+
+<?php 
+$ID = $_GET["ID"];
+$HOURS = NULL;
+$HOURS_OR_DAYS = $conn->real_escape_string($_POST['HOURS_OR_DAYS']);
+$CHARGE = $conn->real_escape_string($_POST['hid_fare']);
+$TOTAL_AMOUNT = $HOURS_OR_DAYS * $CHARGE;
+$MACHINE_RETURN_DATE = date('Y-m-O');
+$RETURN_STATUS = "R";
+$login_customer = $_SESSION['login_customer'];
+
+$sql0 = "SELECT RM.ID, RM.RENT_END_DATE, RM.CHARGE_TYPE, RM.RENT_START_DATE, M.MACHINE_NAME, M.MACHINE_REGISTRATION_NO FROM RENTED_MACHINES RM, MACHINES M WHERE ID = '$ID' AND M.MACHINE_ID = RM.MACHINE_ID";
+$result0 = $conn->query($sql0);
+
+if(mysqli_num_rows($result0) > 0) {
+    while($row0 = mysqli_fetch_assoc($result0)){
+            $RENT_END_DATE = $row0["RENT_END_DATE"];  
+            $RENT_START_DATE = $row0["RENT_START_DATE"];
+            $MACHINE_NAME = $row0["MACHINE_NAME"];
+            $MACHINE_REGISTRATION_NO = $row0["MACHINE_REGISTRATION_NO"];
+            $CHARGE_TYPE = $row0["CHARGE_TYPE"];
+    }
+}
+
+function dateDiff($start, $end) {
+    $start_ts = strtotime($start);
+    $end_ts = strtotime($end);
+    $diff = $end_ts - $start_ts;
+    return round($diff / 86400);
+}
+
+$extra_days = dateDiff("$RENT_END_DATE", $MACHINE_RETURN_DATE);
+$total_fine = $extra_days*200;
+
+$duration = dateDiff("$RENT_START_DATE","$RENT_END_DATE");
+
+if($extra_days>0) {
+    $TOTAL_AMOUNT = $TOTAL_AMOUNT + $total_fine;  
+}
+
+if($CHARGE_TYPE == "days"){
+    $NO_OF_DAYS = $HOURS_OR_DAYS;
+    $sql1 = "UPDATE RENTED_MACHINES SET MACHINE_RETURN_DATE='$MACHINE_RETURN_DATE', NO_OF_DAYS='$NO_OF_DAYS', TOTAL_AMOUNT='$TOTAL_AMOUNT', RETURN_STATUS='$RETURN_STATUS' WHERE ID = '$ID' ";
+} else {
+    $HOURS = $HOURS_OR_DAYS;
+    $sql1 = "UPDATE RENTED_MACHINES SET MACHINE_RETURN_DATE='$MACHINE_RETURN_DATE', HOURS='$HOURS', NO_OF_DAYS='$duration', TOTAL_AMOUNT='$TOTAL_AMOUNT', RETURN_STATUS='$RETURN_STATUS' WHERE ID = '$ID' ";
+}
+
+$result1 = $conn->query($sql1);
+
+if ($result1){
+     $sql2 = "UPDATE MACHINES M, OPERATORS O, RENTED_MACHINES RM SET M.MACHINE_AVAILABILITY='yes', O.OPERATOR_AVAILABILITY='yes' 
+     WHERE RM.MACHINE_ID=M.MACHINE_ID AND RM.OPERATOR_ID=O.OPERATOR_ID AND RM.customer_username = '$login_customer' AND RM.ID = '$ID'";
+     $result2 = $conn->query($sql2);
+}
+else {
+    echo $conn->error;
+}
+
+?>
+    <div class="container">
+        <div class="jumbotron">
+            <h1 class="text-center" style="color: green;"><span class="glyphicon glyphicon-ok-circle"></span> Car Returned</h1>
+        </div>
+    </div>
+    <br>
+
+    <h2 class="text-center"> Thank you for visiting Farm Rentals! We wish you have a lovely time. </h2>
+
+    <h3 class="text-center"> <strong>Your Order Number:</strong> <span style="color: blue;"><?php echo "$ID"; ?></span> </h3>
+
+
+    <div class="container">
+        <h5 class="text-center">Please read the following information about your order.</h5>
+        <div class="box">
+            <div class="col-md-10" style="float: none; margin: 0 auto; text-align: center;">
+                <h3 style="color: orange;">Your booking has been received and placed into out order processing system.</h3>
+                <br>
+                <h4>Please make a note of your <strong>order number</strong> now and keep in the event you need to communicate with us about your order.</h4>
+                <br>
+                <h3 style="color: orange;">Invoice</h3>
+                <br>
+            </div>
+            <div class="col-md-10" style="float: none; margin: 0 auto; ">
+                <h4> <strong>Machine Name: </strong> <?php echo $MACHINE_NAME;?></h4>
+                <br>
+                <h4> <strong>Machine Registration No.:</strong> <?php echo $MACHINE_REGISTRATION_NO; ?></h4>
+                <br>
+                <h4> <strong>Fare:&nbsp;</strong>  Kshs. <?php 
+            if($CHARGE_TYPE == "days"){
+                    echo ($CHARGE . "/day");
+                } else {
+                    echo ($CHARGE . "/hr");
+                }
+            ?></h4>
+                <br>
+                <h4> <strong>Booking Date: </strong> <?php echo date("Y-m-O"); ?> </h4>
+                <br>
+                <h4> <strong>Start Date: </strong> <?php echo $RENT_START_DATE; ?></h4>
+                <br>
+                <h4> <strong>Rent End Date: </strong> <?php echo $RENT_END_DATE; ?></h4>
+                <br>
+                <h4> <strong>Machine Return Date: </strong> <?php echo $MACHINE_RETURN_DATE; ?> </h4>
+                <br>
+                <?php if($CHARGE_TYPE == "days"){?>
+                    <h4> <strong>Number of days:</strong> <?php echo $HOURS_OR_DAYS; ?>day(s)</h4>
+                <?php } else { ?>
+                    <h4> <strong>Time taken:</strong> <?php echo $HOURS_OR_DAYS; ?>hr(s)</h4>
+                <?php } ?>
+                <br>
+                <?php
+                    if($extra_days > 0){
+                        
+                ?>
+                <h4> <strong>Total Fine:</strong> <label class="text-danger"> Kshs. <?php echo $total_fine; ?>/- </label> for <?php echo $extra_days;?> extra days.</h4>
+                <br>
+                <?php } ?>
+                <h4> <strong>Total Amount: </strong> Kshs. <?php echo $TOTAL_AMOUNT; ?>/-     </h4>
+                <br>
+            </div>
+        </div>
+        <div class="col-md-12" style="float: none; margin: 0 auto; text-align: center;">
+            <h6>Warning! <strong>Do not reload this page</strong> or the above display will be lost. If you want a hardcopy of this page, please print it now.</h6>
+        </div>
+    </div>
+
+
+?>
+
+</body>
+<footer class="site-footer">
+        <div class="container">
+            <hr>
+            <div class="row">
+                <div class="col-sm-6">
+                    <h5>© <?php echo date("Y"); ?> Farm Rentals</h5>
+                </div>
+            </div>
+        </div>
+    </footer>
+</html>
